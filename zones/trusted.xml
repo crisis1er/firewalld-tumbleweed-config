@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="ACCEPT">
+  <short>Trusted</short>
+  <description>All network connections are accepted.</description>
+  <port port="9090" protocol="tcp"/>
+  <port port="9093" protocol="tcp"/>
+  <port port="9091" protocol="tcp"/>
+  <port port="9117" protocol="tcp"/>
+  <port port="9167" protocol="tcp"/>
+  <port port="3000" protocol="tcp"/>
+  <port port="3100" protocol="tcp"/>
+  <port port="9177" protocol="tcp"/>
+  <port port="9100" protocol="tcp"/>
+  <port port="9115" protocol="tcp"/>
+  <port port="9116" protocol="tcp"/>
+  <port port="9127" protocol="tcp"/>
+  <port port="9444" protocol="tcp"/>
+  <source address="192.168.1.0/24"/>
+  <forward/>
+</zone>
