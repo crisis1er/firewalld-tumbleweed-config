@@ -1,0 +1,27 @@
+$ sudo journalctl -f | grep "FINAL_REJECT\|_DROP"
+
+Apr 04 08:12:34 hostname kernel: FINAL_REJECT: IN=enp0s18u1u1u3c2 OUT= MAC=... SRC=185.220.101.42 DST=192.168.1.100 LEN=44 TOS=0x00 PREC=0x00 TTL=243 ID=54321 PROTO=TCP SPT=56234 DPT=22 WINDOW=1024 RES=0x00 SYN URGP=0
+Apr 04 08:12:41 hostname kernel: FINAL_REJECT: IN=enp0s18u1u1u3c2 OUT= MAC=... SRC=45.83.193.150 DST=192.168.1.100 LEN=40 TOS=0x00 PREC=0x00 TTL=238 ID=0 PROTO=TCP SPT=42815 DPT=3389 WINDOW=1024 RES=0x00 SYN URGP=0
+Apr 04 08:13:05 hostname kernel: FINAL_REJECT: IN=enp0s18u1u1u3c2 OUT= MAC=... SRC=194.165.16.11 DST=192.168.1.100 LEN=44 TOS=0x00 PREC=0x00 TTL=240 ID=12345 PROTO=TCP SPT=61423 DPT=23 WINDOW=65535 RES=0x00 SYN URGP=0
+
+# Reading the log fields:
+# IN=    — interface the packet arrived on
+# SRC=   — source IP (attacker / scanner)
+# DST=   — destination IP (your machine)
+# DPT=   — destination port being probed
+# PROTO= — protocol (TCP/UDP/ICMP)
+# SYN    — TCP connection attempt (new connection)
+#
+# Common DPT values seen in the wild:
+#   22    — SSH brute-force attempts
+#   3389  — RDP (Windows Remote Desktop) scanners
+#   23    — Telnet scanners
+#   80    — HTTP probes
+#   8080  — Alternate HTTP scanners
+#
+# These are dropped silently by the public zone (target: DROP)
+# LogDenied=all in firewalld.conf ensures every dropped packet is logged
+
+# Filter by specific port (e.g., SSH probes only):
+$ sudo journalctl | grep "FINAL_REJECT" | grep "DPT=22" | wc -l
+847

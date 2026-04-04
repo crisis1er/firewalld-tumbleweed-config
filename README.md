@@ -206,7 +206,8 @@ firewalld-tumbleweed-config/
 │   ├── internal.xml            # Internal network
 │   ├── dmz.xml                 # DMZ — SSH only
 │   └── work.xml                # Work network
-└── policies/
+├── policies/
+└── examples/                   # Real terminal output for each command below
     ├── allow-host-ipv6.xml     # NDP/RA for host IPv6
     ├── libvirt-routed-in.xml   # Inbound to routed VMs
     ├── libvirt-routed-out.xml  # Outbound from routed VMs
@@ -265,18 +266,23 @@ sudo firewall-cmd --list-all-zones
 ```bash
 # Show all active zones and their rules
 sudo firewall-cmd --list-all-zones
+# → see examples/01-list-all-zones/output.txt
 
 # Show active policies
 sudo firewall-cmd --list-all-policies
+# → see examples/02-list-all-policies/output.txt
 
 # Check what zone an interface belongs to
 sudo firewall-cmd --get-zone-of-interface=br0
+# → see examples/03-get-zone-of-interface/output.txt
 
-# Test a specific connection
+# Test whether a service or port is allowed in a zone
 sudo firewall-cmd --query-service=squid --zone=public
+# → see examples/04-query-service/output.txt
 
 # Live log of denied packets
-sudo journalctl -f | grep "FINAL_REJECT\|DROP"
+sudo journalctl -f | grep "FINAL_REJECT\|_DROP"
+# → see examples/05-log-denied/output.txt
 ```
 
 ---

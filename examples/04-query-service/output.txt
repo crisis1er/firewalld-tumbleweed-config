@@ -1,0 +1,18 @@
+$ sudo firewall-cmd --query-service=squid --zone=public
+yes
+
+$ sudo firewall-cmd --query-service=ssh --zone=public
+no
+
+$ sudo firewall-cmd --query-port=443/udp --zone=public
+yes
+
+$ sudo firewall-cmd --query-port=9091/tcp --zone=trusted
+yes
+
+# Explanation:
+# "yes" — the service or port is explicitly allowed in the zone
+# "no"  — the service or port is not listed; traffic follows the zone default target
+#
+# public zone target is DROP — any "no" means the traffic is silently dropped
+# trusted zone target is ACCEPT — any "no" still accepts (zone default allows all)
