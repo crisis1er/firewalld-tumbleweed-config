@@ -1,6 +1,32 @@
-# RELEASE
+# RELEASE — firewalld-tumbleweed-config
 
-Version: v1.0
-Date:    2026-04-05
+Version:  v1.0
+Date:     2026-04-04
+Platform: openSUSE Tumbleweed
+firewalld: 1.x / nftables backend
 
-See CHANGELOG.md for details.
+---
+
+## What's in this release
+
+### Initial production configuration
+- nftables backend — replaces deprecated iptables
+- `DefaultZone=public` (DROP) — all unassigned interfaces fall into the strictest zone
+- `LogDenied=all` — every dropped/rejected packet logged to journald → Loki
+- `ReloadPolicy=INPUT:DROP,FORWARD:DROP,OUTPUT:DROP` — no exposure window during reload
+- `IPv6_rpfilter=yes` + `RFC3964_IPv4=yes` — anti-spoofing
+
+### Zones
+- `public` (DROP, br0) — whitelist-only: HTTPS 443, DNS 53, DoT 853, DoH 8053, Squid 10000, QUIC, torrent, NordVPN
+- `trusted` (ACCEPT, source 192.168.1.0/24) — monitoring stack: Prometheus 9091, Grafana 3000, Loki 3100, Alertmanager 9093, all exporters
+- `libvirt` (ACCEPT + reject rule priority 32767) — KVM VMs: DNS, DHCP, SSH, Squid, HTTPS
+- `libvirt-routed` — routed KVM network
+- `docker` (ACCEPT) — Docker bridge
+
+### Policies
+- `libvirt-to-host` (REJECT) — VMs cannot reach host freely, only DNS/DHCP/SSH/TFTP/ICMP
+- `libvirt-routed-in/out` (ACCEPT) — routed VM traffic to/from network
+- `allow-host-ipv6` (CONTINUE) — NDP neighbour-solicitation, neighbour-advertisement, router-advertisement
+
+### Lockdown whitelist
+- D-Bus access restricted to: firewall-config, root (uid 0), NetworkManager_t (SELinux), virtd_t (SELinux)
