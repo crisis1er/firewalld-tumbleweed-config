@@ -19,19 +19,80 @@ firewalld uses a **zone-based model**: each network interface or traffic source 
 
 On top of zones, **policies** handle traffic *between* zones (e.g., VM traffic toward the host). This makes the firewall readable and auditable at a glance.
 
-```
-Internet ──► public zone (DROP default) ──► br0 (KVM bridge)
-                                              │
-                              ┌───────────────┤
-                              │               │
-                         libvirt zone    libvirt-routed zone
-                         (KVM VMs)       (routed VMs)
-                              │
-                    libvirt-to-host policy
-                    (REJECT by default — only DNS/DHCP/SSH allowed)
+```mermaid
+flowchart TD
+    classDef external fill:#374151,stroke:#9ca3af,stroke-width:2px,color:#ffffff
+    classDef zone_drop fill:#991b1b,stroke:#fca5a5,stroke-width:2px,color:#ffffff
+    classDef zone_trusted fill:#1d4ed8,stroke:#bfdbfe,stroke-width:2px,color:#ffffff
+    classDef zone_libvirt fill:#1e40af,stroke:#93c5fd,stroke-width:2px,color:#ffffff
+    classDef policy fill:#831843,stroke:#f9a8d4,stroke-width:2px,color:#ffffff
+    classDef host_svc fill:#047857,stroke:#6ee7b7,stroke-width:2px,color:#ffffff
+    classDef monitoring fill:#0f766e,stroke:#5eead4,stroke-width:2px,color:#ffffff
+    classDef engine fill:#a16207,stroke:#fde68a,stroke-width:2px,color:#ffffff
+    classDef logs fill:#c2410c,stroke:#fdba74,stroke-width:2px,color:#ffffff
 
-LAN (192.168.1.0/24) ──► trusted zone (ACCEPT)
-                          Prometheus, Grafana, Loki, Cockpit, exporters
+    INTERNET[Internet / WAN]:::external
+    LAN[LAN - 192.168.1.0/24]:::external
+    KVM[KVM VMs - virbr0 NAT]:::external
+    KVM_R[KVM VMs - routed network]:::external
+
+    ENGINE[nftables engine - LogDenied all - ReloadPolicy INPUT-FORWARD-OUTPUT DROP]:::engine
+
+    ZONE_PUB[zone public - br0 - target DROP - default zone]:::zone_drop
+    PUB_ALLOW[Allowed inbound: https 443 - dns 53 - DoT 853 - DoH 8053 - squid 10000 - QUIC 443udp - torrent 6881-6889 and 51413 - kdeconnect - NordVPN 2234-2236]:::zone_drop
+
+    ZONE_TRUST[zone trusted - source 192.168.1.0/24 - target ACCEPT]:::zone_trusted
+    MON[Prometheus 9091 - Grafana 3000 - Loki 3100 - Alertmanager 9093 - node exporter 9100 - squid exporter 9116 - snmp exporter 9117 - unbound exporter 9167 - blackbox 9115]:::monitoring
+
+    ZONE_LIB[zone libvirt - virbr0 - target ACCEPT - reject rule priority 32767]:::zone_libvirt
+    LIB_ALLOW[Allowed VM to host: dhcp - dhcpv6 - dns 53 - ssh - squid 10000 - https 443]:::zone_libvirt
+
+    ZONE_LIB_R[zone libvirt-routed - routed VM networks]:::zone_libvirt
+    POL_LTH[policy libvirt-to-host - REJECT - except dns dhcp ssh tftp icmp]:::policy
+    POL_RIN[policy libvirt-routed-in - ACCEPT]:::policy
+    POL_ROUT[policy libvirt-routed-out - ACCEPT]:::policy
+    POL_IPV6[policy allow-host-ipv6 - CONTINUE - NDP neighbour-solicitation and advertisement]:::policy
+
+    CADDY[Caddy - port 443 - DoH doh.lan - port 8053 loopback]:::host_svc
+    SQUID[Squid - proxy port 10000]:::host_svc
+    UNBOUND[Unbound - DNS port 53 - DoT outbound 853 - DoH port 8053]:::host_svc
+
+    JOURNAL[journald - FINAL_REJECT and DROP events - LogDenied all]:::logs
+    ALLOY[Alloy]:::logs
+    LOKI[Loki]:::logs
+
+    INTERNET -->|inbound| ZONE_PUB
+    ZONE_PUB --> PUB_ALLOW
+    PUB_ALLOW -->|port 443| CADDY
+    PUB_ALLOW -->|port 10000| SQUID
+    PUB_ALLOW -->|port 53 and 853| UNBOUND
+    ZONE_PUB -->|no match - DROP| JOURNAL
+
+    INTERNET -->|IPv6 NDP| POL_IPV6
+
+    LAN -->|source 192.168.1.0/24| ZONE_TRUST
+    ZONE_TRUST --> MON
+
+    KVM -->|virbr0| ZONE_LIB
+    ZONE_LIB --> LIB_ALLOW
+    LIB_ALLOW -->|dns 53| UNBOUND
+    LIB_ALLOW -->|squid 10000| SQUID
+    LIB_ALLOW -->|no match - REJECT| JOURNAL
+
+    KVM_R -->|routed| ZONE_LIB_R
+    ZONE_LIB_R --> POL_LTH
+    POL_LTH -->|dns dhcp ssh icmp only| UNBOUND
+    POL_LTH -->|REJECT all others| JOURNAL
+    ZONE_LIB_R --> POL_RIN
+    ZONE_LIB_R --> POL_ROUT
+    POL_ROUT -->|outbound routing| INTERNET
+
+    JOURNAL -->|LogDenied all| ALLOY
+    ALLOY --> LOKI
+
+    ENGINE -.->|manages| ZONE_PUB
+    ENGINE -.->|manages| ZONE_TRUST
+    ENGINE -.->|manages| ZONE_LIB
 ```
 
 ---
@@ -207,11 +268,11 @@ firewalld-tumbleweed-config/
 │   ├── dmz.xml                 # DMZ — SSH only
 │   └── work.xml                # Work network
 ├── policies/
+│   ├── allow-host-ipv6.xml     # NDP/RA for host IPv6
+│   ├── libvirt-routed-in.xml   # Inbound to routed VMs
+│   ├── libvirt-routed-out.xml  # Outbound from routed VMs
+│   └── libvirt-to-host.xml     # VM to host isolation (REJECT)
 └── examples/                   # Real terminal output for each command below
-    ├── allow-host-ipv6.xml     # NDP/RA for host IPv6
-    ├── libvirt-routed-in.xml   # Inbound to routed VMs
-    ├── libvirt-routed-out.xml  # Outbound from routed VMs
-    └── libvirt-to-host.xml     # VM → host isolation (REJECT)
 ```
 
 ---
@@ -301,7 +362,7 @@ sudo journalctl -f | grep "FINAL_REJECT\|_DROP"
 
 ## Contributing
 
-Issues and pull requests are welcome.  
+Issues and pull requests are welcome.
 Please include your firewalld version (`firewall-cmd --version`) and openSUSE version in bug reports.
 
 ---
