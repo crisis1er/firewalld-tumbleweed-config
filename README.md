@@ -14,6 +14,7 @@ Deployed and validated on a live system. Every zone and every open port has a do
 ---
 
 ## Architecture overview
+> ⚠️ *If the diagram is not visible, refresh the page — Mermaid rendering may
 
 firewalld uses a **zone-based model**: each network interface or traffic source is assigned to a zone, and each zone defines what is allowed. This is fundamentally different from writing raw iptables rules — zones are named, reusable, and composable.
 
