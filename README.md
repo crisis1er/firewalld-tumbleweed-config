@@ -14,7 +14,6 @@ Deployed and validated on a live system. Every zone and every open port has a do
 ---
 
 ## Architecture overview
-> ⚠️ *If the diagram is not visible, refresh the page — Mermaid rendering may
 
 firewalld uses a **zone-based model**: each network interface or traffic source is assigned to a zone, and each zone defines what is allowed. This is fundamentally different from writing raw iptables rules — zones are named, reusable, and composable.
 
@@ -32,37 +31,41 @@ flowchart TD
     classDef engine fill:#a16207,stroke:#fde68a,stroke-width:2px,color:#ffffff
     classDef logs fill:#c2410c,stroke:#fdba74,stroke-width:2px,color:#ffffff
 
+    ENGINE[firewalld - nftables backend - LogDenied all - ReloadPolicy DROP - DefaultZone public]:::engine
+
+    ZONE_PUB[zone public - br0 - target DROP - default zone]:::zone_drop
+    ZONE_TRUST[zone trusted - source 192.168.1.0/24 - target ACCEPT]:::zone_trusted
+    ZONE_LIB[zone libvirt - virbr0 NAT - target ACCEPT - reject priority 32767]:::zone_libvirt
+    ZONE_LIB_R[zone libvirt-routed - routed VM networks]:::zone_libvirt
+
+    PUB_ALLOW[Inbound allowed: https 443 - dns 53 - DoT 853 - DoH 8053 - squid 10000 - QUIC 443udp - torrent 6881-6889 and 51413 - kdeconnect - NordVPN 2234-2236]:::zone_drop
+    LIB_ALLOW[VM to host allowed: dhcp - dhcpv6 - dns 53 - ssh - squid 10000 - https 443]:::zone_libvirt
+    MON[Prometheus 9091 - Grafana 3000 - Loki 3100 - Alertmanager 9093 - node exporter 9100 - squid exporter 9116 - snmp exporter 9117 - unbound exporter 9167 - blackbox 9115]:::monitoring
+
+    POL_LTH[policy libvirt-to-host - REJECT - except dns dhcp ssh tftp icmp]:::policy
+    POL_RIN[policy libvirt-routed-in - ACCEPT]:::policy
+    POL_ROUT[policy libvirt-routed-out - ACCEPT]:::policy
+    POL_IPV6[policy allow-host-ipv6 - CONTINUE - NDP neighbour and router advertisement]:::policy
+
+    CADDY[Caddy - port 443 - DoH doh.lan - port 8053]:::host_svc
+    SQUID[Squid - proxy port 10000]:::host_svc
+    UNBOUND[Unbound - DNS port 53 - DoT outbound 853 - DoH port 8053]:::host_svc
+
+    JOURNAL[journald - DROP and REJECT events - LogDenied all]:::logs
+    ALLOY[Alloy]:::logs
+    LOKI[Loki]:::logs
+
     INTERNET[Internet / WAN]:::external
     LAN[LAN - 192.168.1.0/24]:::external
     KVM[KVM VMs - virbr0 NAT]:::external
     KVM_R[KVM VMs - routed network]:::external
 
-    ENGINE[nftables engine - LogDenied all - ReloadPolicy INPUT-FORWARD-OUTPUT DROP]:::engine
+    ENGINE --> ZONE_PUB
+    ENGINE --> ZONE_TRUST
+    ENGINE --> ZONE_LIB
+    ENGINE --> ZONE_LIB_R
 
-    ZONE_PUB[zone public - br0 - target DROP - default zone]:::zone_drop
-    PUB_ALLOW[Allowed inbound: https 443 - dns 53 - DoT 853 - DoH 8053 - squid 10000 - QUIC 443udp - torrent 6881-6889 and 51413 - kdeconnect - NordVPN 2234-2236]:::zone_drop
-
-    ZONE_TRUST[zone trusted - source 192.168.1.0/24 - target ACCEPT]:::zone_trusted
-    MON[Prometheus 9091 - Grafana 3000 - Loki 3100 - Alertmanager 9093 - node exporter 9100 - squid exporter 9116 - snmp exporter 9117 - unbound exporter 9167 - blackbox 9115]:::monitoring
-
-    ZONE_LIB[zone libvirt - virbr0 - target ACCEPT - reject rule priority 32767]:::zone_libvirt
-    LIB_ALLOW[Allowed VM to host: dhcp - dhcpv6 - dns 53 - ssh - squid 10000 - https 443]:::zone_libvirt
-
-    ZONE_LIB_R[zone libvirt-routed - routed VM networks]:::zone_libvirt
-    POL_LTH[policy libvirt-to-host - REJECT - except dns dhcp ssh tftp icmp]:::policy
-    POL_RIN[policy libvirt-routed-in - ACCEPT]:::policy
-    POL_ROUT[policy libvirt-routed-out - ACCEPT]:::policy
-    POL_IPV6[policy allow-host-ipv6 - CONTINUE - NDP neighbour-solicitation and advertisement]:::policy
-
-    CADDY[Caddy - port 443 - DoH doh.lan - port 8053 loopback]:::host_svc
-    SQUID[Squid - proxy port 10000]:::host_svc
-    UNBOUND[Unbound - DNS port 53 - DoT outbound 853 - DoH port 8053]:::host_svc
-
-    JOURNAL[journald - FINAL_REJECT and DROP events - LogDenied all]:::logs
-    ALLOY[Alloy]:::logs
-    LOKI[Loki]:::logs
-
-    INTERNET -->|inbound| ZONE_PUB
+    INTERNET -->|inbound - br0| ZONE_PUB
     ZONE_PUB --> PUB_ALLOW
     PUB_ALLOW -->|port 443| CADDY
     PUB_ALLOW -->|port 10000| SQUID
@@ -70,6 +73,7 @@ flowchart TD
     ZONE_PUB -->|no match - DROP| JOURNAL
 
     INTERNET -->|IPv6 NDP| POL_IPV6
+    POL_IPV6 -.->|accepted| ENGINE
 
     LAN -->|source 192.168.1.0/24| ZONE_TRUST
     ZONE_TRUST --> MON
@@ -78,7 +82,7 @@ flowchart TD
     ZONE_LIB --> LIB_ALLOW
     LIB_ALLOW -->|dns 53| UNBOUND
     LIB_ALLOW -->|squid 10000| SQUID
-    LIB_ALLOW -->|no match - REJECT| JOURNAL
+    ZONE_LIB -->|no match - REJECT| JOURNAL
 
     KVM_R -->|routed| ZONE_LIB_R
     ZONE_LIB_R --> POL_LTH
@@ -88,12 +92,8 @@ flowchart TD
     ZONE_LIB_R --> POL_ROUT
     POL_ROUT -->|outbound routing| INTERNET
 
-    JOURNAL -->|LogDenied all| ALLOY
+    JOURNAL --> ALLOY
     ALLOY --> LOKI
-
-    ENGINE -.->|manages| ZONE_PUB
-    ENGINE -.->|manages| ZONE_TRUST
-    ENGINE -.->|manages| ZONE_LIB
 ```
 
 ---
