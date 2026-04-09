@@ -1,0 +1,55 @@
+# Ignore editor, shell, local test, and temporary files
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# OS / file manager
+.DS_Store
+Thumbs.db
+
+# Shell / logs
+*.log
+*.out
+*.err
+
+# Archives
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+
+# Local secrets and environment files
+.env
+.env.*
+*.secret
+*.secrets
+*.key
+*.pem
+*.crt
+*.p12
+*.kdbx
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Node / frontend
+node_modules/
+
+# Coverage / reports
+coverage/
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+
+# Project-local scratch files
+notes/
+scratch/
+tmp/

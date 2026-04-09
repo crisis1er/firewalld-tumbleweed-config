@@ -1,25 +1,19 @@
 # Changelog
 
-All notable changes to this configuration are documented here.
+All notable changes to this project will be documented in this file.
 
----
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0] — 2026-04-04
+## [Unreleased]
 
+## [2.0.0] - 2026-04-09
 ### Added
-- Initial production configuration — hardened firewalld for openSUSE Tumbleweed
-- nftables backend (`FirewallBackend=nftables`)
-- `zone public` (target DROP, default zone) on `br0` — whitelist-only inbound
-- `zone trusted` (source 192.168.1.0/24) — monitoring stack ports (Prometheus, Grafana, Loki, exporters)
-- `zone libvirt` (target ACCEPT) — KVM VM isolation with priority 32767 reject rule
-- `zone libvirt-routed` — routed KVM network support
-- `zone docker` — Docker bridge (ACCEPT)
-- Policy `libvirt-to-host` (REJECT) — VMs blocked from host except DNS, DHCP, SSH, TFTP, ICMP
-- Policy `libvirt-routed-in/out` (ACCEPT) — routed VM traffic
-- Policy `allow-host-ipv6` — NDP/RA for host IPv6
-- `lockdown-whitelist.xml` — D-Bus access restricted to firewall-config, root, NetworkManager, virtd
-- `LogDenied=all` — all dropped/rejected packets logged to journald
-- `ReloadPolicy=INPUT:DROP,FORWARD:DROP,OUTPUT:DROP` — secure reload window
-- `IPv6_rpfilter=yes` + `RFC3964_IPv4=yes` — anti-spoofing
-- Real terminal output examples for all documented commands (`examples/`)
-- Full Mermaid architecture diagram in README
+- Added `.gitignore` for Linux, openSUSE, Zsh, editors, and local secrets.
+- Added `SECURITY.md` with responsible disclosure guidance and scope.
+
+### Changed
+- Replaced MIT license with GNU GPL-3.0.
+
+[Unreleased]: https://github.com/crisis1er/firewalld-tumbleweed-config/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/crisis1er/firewalld-tumbleweed-config/releases/tag/v2.0.0
