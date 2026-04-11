@@ -1,0 +1,21 @@
+# Maintainers
+
+## Active maintainer
+
+  Name       : crisis1er
+  GitHub     : https://github.com/crisis1er
+  Blog       : https://safeitexperts.com
+  Role       : Author and sole maintainer
+
+## Compatibility
+
+  Tested on  : openSUSE Tumbleweed (rolling release)
+               openSUSE Leap
+  Compatible : openSUSE-based distributions
+               (minor adaptations may be required)
+
+## License
+
+  Licensed under GNU GPL v3.0
+  Copyright (c) 2024-2026 SafeITExperts — https://safeitexperts.com
+  Full license: https://www.gnu.org/licenses/gpl-3.0.html
