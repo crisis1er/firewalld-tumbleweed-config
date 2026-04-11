@@ -2,7 +2,7 @@
 
 ![Platform](https://img.shields.io/badge/platform-openSUSE%20Tumbleweed-73BA25)
 ![Backend](https://img.shields.io/badge/backend-nftables-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-GPL--3.0-blue)
 ![Zones](https://img.shields.io/badge/zones-12-orange)
 ![KVM](https://img.shields.io/badge/KVM-libvirt%20integrated-purple)
 ![Monitoring](https://img.shields.io/badge/monitoring-Prometheus%20%2B%20Grafana-E6522C)
@@ -355,7 +355,7 @@ sudo journalctl -f | grep "FINAL_REJECT\|_DROP"
 | Component | Role |
 |-----------|------|
 | [squid-tumbleweed-config](https://github.com/crisis1er/squid-tumbleweed-config) | Squid proxy allowed in public and libvirt zones |
-| [unbound-tumbleweed-config](https://github.com/crisis1er/unbound) | DNS/DoT allowed in public zone, DoH on port 8053 |
+| [unbound-tumbleweed-config](https://github.com/crisis1er/unbound-tumbleweed-config) | DNS/DoT allowed in public zone, DoH on port 8053 |
 | [sysctl-tumbleweed-config](https://github.com/crisis1er/sysctlconf) | `ip_forward=1` and conntrack settings complement firewalld |
 | Prometheus + Grafana + Loki | All exporter ports locked to trusted zone (LAN only) |
 | KVM / libvirt | libvirt zone + policies provide full VM isolation |
@@ -371,4 +371,4 @@ Please include your firewalld version (`firewall-cmd --version`) and openSUSE ve
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+GPL-3.0 License — see [LICENSE](LICENSE) for details.
