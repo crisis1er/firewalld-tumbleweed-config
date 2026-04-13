@@ -15,24 +15,15 @@
   <port port="8000-8001" protocol="tcp"/>
   <port port="8000-8001" protocol="udp"/>
   <port port="854" protocol="tcp"/>
-  <port port="8005" protocol="tcp"/>
-  <port port="8040" protocol="tcp"/>
-  <port port="8120" protocol="tcp"/>
-  <port port="8400" protocol="tcp"/>
-  <port port="8500" protocol="tcp"/>
-  <port port="9000" protocol="tcp"/>
-  <port port="1755" protocol="tcp"/>
   <port port="6881-6889" protocol="tcp"/>
   <port port="6881-6889" protocol="udp"/>
   <port port="2019" protocol="tcp"/>
   <port port="8053" protocol="tcp"/>
   <port port="10000" protocol="tcp"/>
   <port port="443" protocol="udp"/>
-  <port port="3401" protocol="udp"/>
-  <port port="2234-2236" protocol="tcp"/>
-  <port port="2234-2236" protocol="udp"/>
   <port port="51413" protocol="tcp"/>
   <port port="51413" protocol="udp"/>
+  <!-- ports radio (qmmp/KDE) supprimés — ouverts à la demande via alias zsh radio-on/radio-off -->
   <interface name="br0"/>
   <forward/>
 </zone>
